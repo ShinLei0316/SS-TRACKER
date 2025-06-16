@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventory Dashboard</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #9eba8c;
+      margin: 0;
+      display: flex;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 70px;
+      background-color: #2a2a2a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 20px;
+      transition: width 0.3s ease;
+      position: relative;
+    }
+
+    .sidebar:hover {
+      width: 260px;
+      align-items: flex-start;
+      padding-left: 20px;
+    }
+
+    .logo {
+      margin-bottom: 40px;
+      color: #fff;
+      font-size: 24px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      color: #ccc;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .nav-item:hover {
+      background-color: #383838;
+      color: #fff;
+    }
+
+    .nav-icon {
+      margin-right: 16px;
+      font-size: 18px;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .nav-text {
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .sidebar:hover .nav-text {
+      opacity: 1;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    .inventory-header {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .search-bar input {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background-color: #111;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+
+    .card img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      margin-bottom: 10px;
+    }
+
+    .card h3 {
+      margin: 10px 0 5px;
+      color: #fff;
+    }
+
+    .card .price {
+      color: #00e676;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .card input[type='number'] {
+      width: 60px;
+      padding: 4px;
+      border-radius: 6px;
+      border: none;
+      text-align: center;
+    }
+
+    .card .low-stock {
+      color: #ff5252;
+      font-size: 12px;
+    }
+
+    .remove-btn {
+      background-color: #ffc107;
+      color: #000;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .remove-btn:hover {
+      background-color: #ffca28;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar Navigation -->
+  <div class="sidebar">
+    <div class="logo">🏪</div>
+
+    <!-- ✅ Dashboard now links to webdev.html -->
+    <div class="nav-item" onclick="location.href='webdev.html'">
+      <span class="nav-icon">🏠</span><span class="nav-text">Dashboard</span>
+    </div>
+
+    <div class="nav-item">
+      <span class="nav-icon">📈</span><span class="nav-text">Price Tracker</span>
+    </div>
+    <div class="nav-item">
+        <div onclick="location.href='e-wallet.html'"><span class="nav-icon">💳</span><span class="nav-text">E-wallet</span></div>
+    </div>
+    <div class="nav-item" onclick="logout()"><span class="nav-icon">&#x1F511;</span><span class="nav-text">Logout</span></div>
+</div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <h1>Inventory Dashboard</h1>
+    <div class="inventory-header">
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search product..." oninput="filterProducts()">
+      </div>
+    </div>
+    <div class="inventory-grid" id="inventoryGrid"></div>
+  </div>
+
+  <script>
+    const productImages = {
+      "soap": "https://cdn-icons-png.flaticon.com/512/2913/2913461.png",
+      "tide": "https://cdn-icons-png.flaticon.com/512/4255/4255794.png",
+      "egg": "https://i.pinimg.com/736x/67/b8/ba/67b8ba067e4b2ce344c2f1959ce20294.jpg",
+      "coke": "https://cdn-icons-png.flaticon.com/512/747/747914.png",
+      "rice": "https://cdn-icons-png.flaticon.com/512/3075/3075977.png"
+    };
+
+    
+    let products = JSON.parse(localStorage.getItem("products")) || [];
+
+    function renderInventory(items) {
+      const container = document.getElementById("inventoryGrid");
+      container.innerHTML = "";
+
+      if (items.length === 0) {
+        container.innerHTML = "<p>No products available. Go back and input items.</p>";
+        return;
+      }
+
+      items.forEach((item, index) => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const imageSrc = productImages[item.name.toLowerCase()] || item.image || "https://cdn-icons-png.flaticon.com/512/869/869636.png";
+
+        card.innerHTML = `
+          <img src="${imageSrc}" alt="${item.name}">
+          <h3>${item.name}</h3>
+          <div class="price">₱${item.sellPrice}</div>
+          <input type="number" min="0" value="${item.quantity}" onchange="updateQuantity(${index}, this.value)">
+          ${item.quantity < 5 ? '<div class="low-stock">Low stock!</div>' : ''}
+          <div style="font-size:12px; margin-top:5px; color:#aaa">Expires: ${item.expiry || 'N/A'}</div>
+          <button class="remove-btn" onclick="removeProduct(${index})">🗑 Remove</button>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function updateQuantity(index, newQty) {
+      products[index].quantity = parseInt(newQty);
+      localStorage.setItem("products", JSON.stringify(products));
+      renderInventory(filterAndSearch());
+    }
+
+    function removeProduct(index) {
+      products.splice(index, 1);
+      localStorage.setItem("products", JSON.stringify(products));
+      renderInventory(filterAndSearch());
+    }
+
+    function filterAndSearch() {
+      const keyword = document.getElementById('searchInput').value.toLowerCase();
+      return products.filter(item => item.name.toLowerCase().includes(keyword));
+    }
+
+    function filterProducts() {
+      renderInventory(filterAndSearch());
+    }
+
+    window.addEventListener("storage", (e) => {
+      if (e.key === "products") {
+        products = JSON.parse(localStorage.getItem("products")) || [];
+        renderInventory(filterAndSearch());
+      }
+    });
+    function logout() {
+      window.location.href = 'login.html';
+    }
+
+
+    renderInventory(products);
+  </script>
+</body>
+</html>
