@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Price Tracker</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    input { padding: 5px; }
+    button { padding: 5px 10px; }
+  </style>
+</head>
+<body>
+  <h2>Product Price Tracker</h2>
+  <input id="product" placeholder="Product name" />
+  <input id="price" type="number" placeholder="Price" />
+  <button onclick="addProduct()">Add</button>
+
+  <table>
+    <thead>
+      <tr><th>Product</th><th>Price</th><th>Action</th></tr>
+    </thead>
+    <tbody id="productTable"></tbody>
+  </table>
+
+  <script>
+    const table = document.getElementById('productTable');
+
+    function loadProducts() {
+      table.innerHTML = '';
+      const products = JSON.parse(localStorage.getItem('products') || '[]');
+      products.forEach((p, index) => {
+        table.innerHTML += `
+          <tr>
+            <td>${p.name}</td>
+            <td>₱${p.price.toFixed(2)}</td>
+            <td><button onclick="removeProduct(${index})">Remove</button></td>
+          </tr>`;
+      });
+    }
+
+    function addProduct() {
+      const name = document.getElementById('product').value;
+      const price = parseFloat(document.getElementById('price').value);
+      if (!name || isNaN(price)) return alert("Invalid input!");
+
+      const products = JSON.parse(localStorage.getItem('products') || '[]');
+      products.push({ name, price });
+      localStorage.setItem('products', JSON.stringify(products));
+      loadProducts();
+    }
+
+    function removeProduct(index) {
+      const products = JSON.parse(localStorage.getItem('products') || '[]');
+      products.splice(index, 1);
+      localStorage.setItem('products', JSON.stringify(products));
+      loadProducts();
+    }
+
+    loadProducts();
+  </script>
+</body>
+</html>
